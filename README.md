@@ -1,0 +1,1 @@
+Desenvolver uma API para criação de usuários, com validação para email único, testes e banco de dados. Usar git.
