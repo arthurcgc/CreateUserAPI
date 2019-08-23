@@ -1,4 +1,4 @@
-package user
+package myuser
 
 type User struct {
 	Name  string

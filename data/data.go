@@ -6,10 +6,9 @@ import (
 	"os"
 
 	//comment justifying it
+	"github.com/arthurcgc/CreateUserAPI/myuser"
 	_ "github.com/go-sql-driver/mysql"
-
-	"../terminal"
-	"../user"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 type data struct {
@@ -80,7 +79,7 @@ func (db *data) DeleteUser(name string, email string) error {
 	return nil
 }
 
-func (db *data) GetUser(email string) (*user.User, error) {
+func (db *data) GetUser(email string) (*myuser.User, error) {
 	rows, err := db.database.Query("SELECT * from User WHERE email=?", email)
 	if err != nil {
 		return nil, err
@@ -94,6 +93,6 @@ func (db *data) GetUser(email string) (*user.User, error) {
 		return nil, err
 	}
 
-	res := &user.User{Name: userName, Email: userEmail}
+	res := &myuser.User{Name: userName, Email: userEmail}
 	return res, nil
 }

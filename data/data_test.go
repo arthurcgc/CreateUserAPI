@@ -4,65 +4,57 @@ import (
 	"database/sql"
 	"testing"
 
-	"../user"
+	"github.com/arthurcgc/CreateUserAPI/myuser"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var db = data{username: "root", password: "root", database: nil}
 
 func TestOpenDb(t *testing.T) {
 	err := db.OpenDb()
-	if db.database == nil || err != nil {
-		t.Errorf("Error opening database\n")
-	}
+	require.NoError(t, err)
+	defer db.CloseDb()
+
+	require.NotEqual(t, db.database, nil, "Error opening database\n")
 }
 
 func TestInsertUser(t *testing.T) {
 	// setup
 	err := db.OpenDb()
-	if db.database == nil || err != nil {
-		t.Errorf("Error opening database\n")
-	}
+	require.NoError(t, err)
+	defer db.CloseDb()
+	require.NotEqual(t, db.database, nil, "Error opening database\n")
+
 	defer db.CloseDb()
 	t.Run("", func(t *testing.T) {
 		err := db.InsertUser("Arthur", "arthur@gmail.com")
-		if err != nil {
-			t.Errorf("Error inserting user to User table\n")
-		}
+		assert.NoError(t, err)
+
 		var rows *sql.Rows
 		rows, err = db.database.Query("SELECT * from User WHERE name=? AND email=?", "Arthur", "arthur@gmail.com")
-		if err != nil {
-			t.Fatalf("%v", err)
-		}
-		if !rows.Next() {
-			t.Fatalf("No row found\n")
-		}
+		require.Equal(t, err, nil, err)
+
+		assert.True(t, rows.Next())
 		var name string
 		var email string
 		err = rows.Scan(&name, &email)
-		if err != nil {
-			t.Fatalf("%v", err)
-		}
-		if name != "Arthur" {
-			t.Fatalf("name differs\n")
-		} else if email != "arthur@gmail.com" {
-			t.Fatalf("email differs\n")
-		}
-		if rows.Next() {
-			t.Fatalf("two or more rows exist\n")
-		}
+		assert.NoError(t, err)
+		assert.Equal(t, name, "Arthur", "name differs\n")
+		assert.Equal(t, email, "arthur@gmail.com", "email differs\n")
+		assert.False(t, rows.Next())
+		// assert.Equal(t, rows.Next(), false, "two or more rows exist\n")
 	})
 
 	cleanUpDatabase(t)
 
 	t.Run("", func(t *testing.T) {
 		_, err := db.database.Exec("INSERT INTO User VALUES ('Arthur','arthur@gmail.com')")
-		if err != nil {
-			t.Errorf("Error inserting user\n")
-		}
+		assert.NoError(t, err)
+
 		err = db.InsertUser("Arthur", "arthur@gmail.com")
-		if err == nil {
-			t.Errorf("User inserted and should not be inserted\n")
-		}
+		assert.Error(t, err)
+		// assert.NotEqual(t, err, nil, "User inserted and should not be inserted\n")
 	})
 
 	// teardown
@@ -70,42 +62,31 @@ func TestInsertUser(t *testing.T) {
 }
 
 func cleanUpDatabase(t *testing.T) {
-	if err := db.OpenDb(); err != nil {
-		t.Fatalf("could not open database connection")
-	}
+	err := db.OpenDb()
+	require.NoError(t, err)
 
-	_, err := db.database.Exec("DELETE FROM User")
-	if err != nil {
-		t.Fatalf("error during database cleanup: %v", err)
-	}
+	_, err = db.database.Exec("DELETE FROM User")
+	require.NoError(t, err)
 }
 
 func TestDeleteUser(t *testing.T) {
 	// setup
 	err := db.OpenDb()
-	if db.database == nil || err != nil {
-		t.Errorf("Error opening database\n")
-	}
+	require.NoError(t, err)
 	defer db.CloseDb()
+	require.NotEqual(t, db.database, nil, "Error opening database\n")
 
 	t.Run("", func(t *testing.T) {
 		_, err := db.database.Exec("INSERT INTO User VALUES ('Arthur','arthur@gmail.com')")
-		if err != nil {
-			t.Errorf("Error inserting user\n")
-		}
+		assert.NoError(t, err)
+
 		err = db.DeleteUser("Arthur", "arthur@gmail.com")
-		if err != nil {
-			t.Errorf("Error while deleting user\n%v", err)
-		}
+		assert.NoError(t, err)
 		var rows *sql.Rows
 		rows, err = db.database.Query("SELECT * from User WHERE name=? AND email=?", "Arthur", "arthur@gmail.com")
-		if err != nil {
-			t.Fatalf("%v", err)
-		}
-		if rows.Next() {
-			t.Fatalf("Row still exists\n")
-		}
+		assert.NoError(t, err)
 
+		assert.False(t, rows.Next())
 	})
 
 	// teardown
@@ -115,34 +96,26 @@ func TestDeleteUser(t *testing.T) {
 func TestGetUser(t *testing.T) {
 	// setup
 	err := db.OpenDb()
-	if db.database == nil || err != nil {
-		t.Errorf("Error opening database\n")
-	}
+	require.NoError(t, err)
 	defer db.CloseDb()
+	require.NotEqual(t, db.database, nil, "Error opening database\n")
 
 	t.Run("", func(t *testing.T) {
 		_, err := db.database.Exec("INSERT INTO User VALUES ('Arthur','arthur@gmail.com')")
-		if err != nil {
-			t.Errorf("Error inserting user\n")
-		}
-		var got *user.User
+		assert.NoError(t, err)
+
+		var got *myuser.User
 		got, err = db.GetUser("arthur@gmail.com")
-		if err != nil {
-			t.Errorf("Error in GetUser: %v", err)
-		}
-		if got == nil {
-			t.Errorf("User returned nil")
-		} else if got.Email != "arthur@gmail.com" {
-			t.Errorf("Error querying email")
-		}
+		assert.NoError(t, err)
+		assert.NotEqual(t, got, nil, "User returned nil")
+
+		assert.Equal(t, got.Email, "arthur@gmail.com", "Error querying email")
 	})
 
 	t.Run("", func(t *testing.T) {
 		// var got *user.User
 		_, err = db.GetUser("notfound@gmail.com")
-		if err == nil {
-			t.Errorf("Error should not be nil: %v", err)
-		}
+		assert.Error(t, err)
 	})
 
 	// teardown
