@@ -15,8 +15,7 @@ func TestOpenDb(t *testing.T) {
 	err := db.OpenDb()
 	require.NoError(t, err)
 	defer db.CloseDb()
-
-	require.NotEqual(t, db.database, nil, "Error opening database\n")
+	require.NotNil(t, db.database)
 }
 
 func TestInsertUser(t *testing.T) {
@@ -24,7 +23,7 @@ func TestInsertUser(t *testing.T) {
 	err := db.OpenDb()
 	require.NoError(t, err)
 	defer db.CloseDb()
-	require.NotEqual(t, db.database, nil, "Error opening database\n")
+	require.NotNil(t, db.database)
 
 	defer db.CloseDb()
 	t.Run("", func(t *testing.T) {
@@ -33,7 +32,7 @@ func TestInsertUser(t *testing.T) {
 
 		var rows *sql.Rows
 		rows, err = db.database.Query("SELECT * from User WHERE name=? AND email=?", "Arthur", "arthur@gmail.com")
-		require.Equal(t, err, nil, err)
+		require.NoError(t, err)
 
 		assert.True(t, rows.Next())
 		var name string
@@ -43,7 +42,6 @@ func TestInsertUser(t *testing.T) {
 		assert.Equal(t, name, "Arthur", "name differs\n")
 		assert.Equal(t, email, "arthur@gmail.com", "email differs\n")
 		assert.False(t, rows.Next())
-		// assert.Equal(t, rows.Next(), false, "two or more rows exist\n")
 	})
 
 	cleanUpDatabase(t)
@@ -54,7 +52,6 @@ func TestInsertUser(t *testing.T) {
 
 		err = db.InsertUser("Arthur", "arthur@gmail.com")
 		assert.Error(t, err)
-		// assert.NotEqual(t, err, nil, "User inserted and should not be inserted\n")
 	})
 
 	// teardown
@@ -74,7 +71,7 @@ func TestDeleteUser(t *testing.T) {
 	err := db.OpenDb()
 	require.NoError(t, err)
 	defer db.CloseDb()
-	require.NotEqual(t, db.database, nil, "Error opening database\n")
+	require.NotNil(t, db.database)
 
 	t.Run("", func(t *testing.T) {
 		_, err := db.database.Exec("INSERT INTO User VALUES ('Arthur','arthur@gmail.com')")
@@ -98,18 +95,19 @@ func TestGetUser(t *testing.T) {
 	err := db.OpenDb()
 	require.NoError(t, err)
 	defer db.CloseDb()
-	require.NotEqual(t, db.database, nil, "Error opening database\n")
+	require.NotNil(t, db.database)
 
 	t.Run("", func(t *testing.T) {
-		_, err := db.database.Exec("INSERT INTO User VALUES ('Arthur','arthur@gmail.com')")
+		expectedUser := &myuser.User{Name: "Arthur", Email: "arthur@gmail.com"}
+		_, err := db.database.Exec("INSERT INTO User VALUES (?, ?)", expectedUser.Name, expectedUser.Email)
 		assert.NoError(t, err)
 
 		var got *myuser.User
 		got, err = db.GetUser("arthur@gmail.com")
 		assert.NoError(t, err)
-		assert.NotEqual(t, got, nil, "User returned nil")
+		assert.NotNil(t, got)
 
-		assert.Equal(t, got.Email, "arthur@gmail.com", "Error querying email")
+		assert.Equal(t, got, expectedUser, "Error querying email")
 	})
 
 	t.Run("", func(t *testing.T) {
