@@ -9,6 +9,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 
 	"../terminal"
+	"../user"
 )
 
 type data struct {
@@ -77,4 +78,22 @@ func (db *data) DeleteUser(name string, email string) error {
 	}
 	defer stmtRm.Close()
 	return nil
+}
+
+func (db *data) GetUser(email string) (*user.User, error) {
+	rows, err := db.database.Query("SELECT * from User WHERE email=?", email)
+	if err != nil {
+		return nil, err
+	}
+	if !rows.Next() {
+		return nil, fmt.Errorf("User Not Found")
+	}
+	var userName, userEmail string
+	err = rows.Scan(&userName, &userEmail)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &user.User{Name: userName, Email: userEmail}
+	return res, nil
 }

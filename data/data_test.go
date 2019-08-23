@@ -3,6 +3,8 @@ package data
 import (
 	"database/sql"
 	"testing"
+
+	"../user"
 )
 
 var db = data{username: "root", password: "root", database: nil}
@@ -104,6 +106,43 @@ func TestDeleteUser(t *testing.T) {
 			t.Fatalf("Row still exists\n")
 		}
 
+	})
+
+	// teardown
+	cleanUpDatabase(t)
+}
+
+func TestGetUser(t *testing.T) {
+	// setup
+	err := db.OpenDb()
+	if db.database == nil || err != nil {
+		t.Errorf("Error opening database\n")
+	}
+	defer db.CloseDb()
+
+	t.Run("", func(t *testing.T) {
+		_, err := db.database.Exec("INSERT INTO User VALUES ('Arthur','arthur@gmail.com')")
+		if err != nil {
+			t.Errorf("Error inserting user\n")
+		}
+		var got *user.User
+		got, err = db.GetUser("arthur@gmail.com")
+		if err != nil {
+			t.Errorf("Error in GetUser: %v", err)
+		}
+		if got == nil {
+			t.Errorf("User returned nil")
+		} else if got.Email != "arthur@gmail.com" {
+			t.Errorf("Error querying email")
+		}
+	})
+
+	t.Run("", func(t *testing.T) {
+		// var got *user.User
+		_, err = db.GetUser("notfound@gmail.com")
+		if err == nil {
+			t.Errorf("Error should not be nil: %v", err)
+		}
 	})
 
 	// teardown
