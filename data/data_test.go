@@ -16,7 +16,6 @@ func TestOpenDb(t *testing.T) {
 
 func TestInsertUser(t *testing.T) {
 	// setup
-	db := data{username: "root", password: "root", database: nil}
 	err := db.OpenDb()
 	if db.database == nil || err != nil {
 		t.Errorf("Error opening database\n")
@@ -77,4 +76,36 @@ func cleanUpDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error during database cleanup: %v", err)
 	}
+}
+
+func TestDeleteUser(t *testing.T) {
+	// setup
+	err := db.OpenDb()
+	if db.database == nil || err != nil {
+		t.Errorf("Error opening database\n")
+	}
+	defer db.CloseDb()
+
+	t.Run("", func(t *testing.T) {
+		_, err := db.database.Exec("INSERT INTO User VALUES ('Arthur','arthur@gmail.com')")
+		if err != nil {
+			t.Errorf("Error inserting user\n")
+		}
+		err = db.DeleteUser("Arthur", "arthur@gmail.com")
+		if err != nil {
+			t.Errorf("Error while deleting user\n%v", err)
+		}
+		var rows *sql.Rows
+		rows, err = db.database.Query("SELECT * from User WHERE name=? AND email=?", "Arthur", "arthur@gmail.com")
+		if err != nil {
+			t.Fatalf("%v", err)
+		}
+		if rows.Next() {
+			t.Fatalf("Row still exists\n")
+		}
+
+	})
+
+	// teardown
+	cleanUpDatabase(t)
 }

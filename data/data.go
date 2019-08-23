@@ -67,7 +67,7 @@ func (db *data) InsertUser(name string, email string) error {
 }
 
 func (db *data) DeleteUser(name string, email string) error {
-	stmtRm, err := db.database.Prepare("DELETE FROM User WHERE name = ? AND mail = ?);")
+	stmtRm, err := db.database.Prepare("DELETE FROM User WHERE Name = ? AND Email = ?")
 	if err != nil {
 		return err
 	}
