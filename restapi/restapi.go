@@ -8,8 +8,11 @@ import (
 	"github.com/arthurcgc/CreateUserAPI/myuser"
 )
 
-func GetUser(w http.ResponseWriter, r *http.Request, db *data.data) myuser.User {
-	db.OpenDb()
+func GetUser(w http.ResponseWriter, r *http.Request, db *data.data) (*myuser.User, error) {
+	err := db.OpenDb()
+	if err != nil {
+		return nil, err
+	}
 	defer db.CloseDb()
 	usr := db.GetUser(email)
 	return usr
