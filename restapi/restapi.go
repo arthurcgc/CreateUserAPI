@@ -14,8 +14,13 @@ func GetUser(w http.ResponseWriter, r *http.Request, db *data.data) (*myuser.Use
 		return nil, err
 	}
 	defer db.CloseDb()
-	usr := db.GetUser(email)
-	return usr
+
+	params := mux.Vars(r)
+	err, usr := db.GetUser(params["email"])
+	if err != nil {
+		return nil, err
+	}
+	return usr, nil
 }
 
 func GetAllUsers(w http.ResponseWriter, r *http.Request, db *data.data) {
