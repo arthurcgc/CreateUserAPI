@@ -29,11 +29,22 @@ func (app *RestApi) GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 	// json.NewEncoder(w).Encode(usr)
 	respondWithJSON(w, http.StatusOK, usr)
-
 }
 
-func GetAllUsers(w http.ResponseWriter, r *http.Request, db *data.Data) {
+func (app *RestApi) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	if err := app.Database.OpenDb(); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Error opening Database")
+		return
+	}
+	defer app.Database.CloseDb()
 
+	usrs, err := app.Database.GetAll()
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Error retrieving Users")
+		return
+	}
+	// json.NewEncoder(w).Encode(usr)
+	respondWithJSON(w, http.StatusOK, usrs)
 }
 
 func InsertUser(w http.ResponseWriter, r *http.Request, db *data.Data) {
@@ -46,6 +57,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request, db *data.Data) {
 
 func (app *RestApi) appendRouterFunctions() {
 	app.Router.HandleFunc("/users/{email}", app.GetUser).Methods("GET")
+	app.Router.HandleFunc("/users", app.GetAllUsers).Methods("GET")
 }
 
 func Initialize() (*RestApi, error) {

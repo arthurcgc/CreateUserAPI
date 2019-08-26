@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var db = data{username: "root", password: "root", database: nil}
+var db = Data{Username: "root", Password: "root", database: nil}
 
 func TestOpenDb(t *testing.T) {
 	err := db.OpenDb()
@@ -97,11 +97,11 @@ func TestGetUser(t *testing.T) {
 	require.NotNil(t, db.database)
 
 	t.Run("", func(t *testing.T) {
-		expectedUser := &myuser.User{Name: "Arthur", Email: "arthur@gmail.com"}
+		expectedUser := &User{Name: "Arthur", Email: "arthur@gmail.com"}
 		_, err := db.database.Exec("INSERT INTO User VALUES (?, ?)", expectedUser.Name, expectedUser.Email)
 		assert.NoError(t, err)
 
-		var got *myuser.User
+		var got *User
 		got, err = db.GetUser("arthur@gmail.com")
 		assert.NoError(t, err)
 		assert.NotNil(t, got)
@@ -113,6 +113,42 @@ func TestGetUser(t *testing.T) {
 		// var got *user.User
 		_, err = db.GetUser("notfound@gmail.com")
 		assert.Error(t, err)
+	})
+
+	// teardown
+	cleanUpDatabase(t)
+}
+
+func TestGetAll(t *testing.T) {
+	// setup
+	err := db.OpenDb()
+	require.NoError(t, err)
+	defer db.CloseDb()
+	require.NotNil(t, db.database)
+
+	var expectedUsers []User
+	t.Run("", func(t *testing.T) {
+		expectedUsers = append(expectedUsers, User{Name: "Arthur", Email: "arthur@gmail.com"})
+		_, err := db.database.Exec("INSERT INTO User VALUES (?, ?)", "Arthur", "arthur@gmail.com")
+		assert.NoError(t, err)
+
+		expectedUsers = append(expectedUsers, User{Name: "Bernardo", Email: "bernardo@gmail.com"})
+		_, err = db.database.Exec("INSERT INTO User VALUES (?, ?)", "Bernardo", "bernardo@gmail.com")
+		assert.NoError(t, err)
+
+		expectedUsers = append(expectedUsers, User{Name: "Claudio", Email: "claudio@gmail.com"})
+		_, err = db.database.Exec("INSERT INTO User VALUES (?, ?)", "Claudio", "claudio@gmail.com")
+		assert.NoError(t, err)
+
+	})
+
+	t.Run("", func(t *testing.T) {
+		// var got *user.User
+		users, err := db.GetAll()
+		assert.NoError(t, err)
+		for i := 0; i < len(users); i++ {
+			assert.Equal(t, users[i], expectedUsers[i], "Error while comparing Users")
+		}
 	})
 
 	// teardown

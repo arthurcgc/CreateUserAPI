@@ -101,3 +101,24 @@ func (db *Data) GetUser(email string) (*User, error) {
 	res := &User{Name: userName, Email: userEmail}
 	return res, nil
 }
+
+func (db *Data) GetAll() ([]User, error) {
+	rows, err := db.database.Query("SELECT * from User")
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	users := []User{}
+
+	for rows.Next() {
+		var u User
+		if err := rows.Scan(&u.Name, &u.Email); err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+
+	return users, nil
+}

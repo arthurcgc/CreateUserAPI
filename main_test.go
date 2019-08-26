@@ -1,24 +1,29 @@
 package main
 
-// func TestGetDbCredentials(t *testing.T) {
-// 	in, err := ioutil.TempFile("", "")
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	defer in.Close()
+import (
+	"net/http"
+	"net/http/httptest"
 
-// 	_, err = io.WriteString(in, "root\n"+"root\n")
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
+	"github.com/arthurcgc/CreateUserAPI/restapi"
+)
 
-// 	_, err = in.Seek(0, os.SEEK_SET)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	got1, got2, _ := getDbCredentials(in)
-// 	want1, want2 := "root", "root"
-// 	if got1 != want1 || got2 != want2 {
-// 		t.Errorf("got1 %q want1 %q\n\t     got2 %q want2 %q", got1, want1, got2, want2)
-// 	}
+var app *restapi.RestApi
+
+func executeRequest(req *http.Request) *httptest.ResponseRecorder {
+	rr := httptest.NewRecorder()
+	app.Router.ServeHTTP(rr, req)
+
+	return rr
+}
+
+// func TestMain(m *testing.M) {
+// 	var err error
+// 	app, err = restapi.Initialize()
+// 	require.NotNil(m, err)
+
+// 	code := m.Run()
+
+// 	clearTable()
+
+// 	os.Exit(code)
 // }
