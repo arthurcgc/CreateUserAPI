@@ -3,12 +3,10 @@ package data
 import (
 	"database/sql"
 	"fmt"
-	"os"
 
 	//comment justifying it
 
 	_ "github.com/go-sql-driver/mysql"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 type User struct {
@@ -20,24 +18,6 @@ type Data struct {
 	Username string
 	Password string
 	database *sql.DB
-}
-
-func (db *Data) SetDbCredentials(in *os.File) error {
-	if in == nil {
-		in = os.Stdin
-	}
-	var username string
-	fmt.Printf("username: ")
-	_, err := fmt.Fscanf(in, "%s", &username)
-	if err != nil {
-		return err
-	}
-	fmt.Println("Your password: ")
-	bytePassword, _ := terminal.ReadPassword(int(in.Fd()))
-	fmt.Println() // it's necessary to add a new line after user's input
-	db.Username = username
-	db.Password = string(bytePassword)
-	return nil
 }
 
 func (db *Data) OpenDb() error {
@@ -71,17 +51,66 @@ func (db *Data) InsertUser(name string, email string) error {
 	return nil
 }
 
-func (db *Data) DeleteUser(name string, email string) error {
-	stmtRm, err := db.database.Prepare("DELETE FROM User WHERE Name = ? AND Email = ?")
+func (db *Data) UpdateUser(email string, newEmail string, newName string) (*User, error) {
+	_, err := db.GetUser(email)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	_, err = stmtRm.Exec(name, email)
+	stmtChangeBoth, err := db.database.Prepare("UPDATE User SET Name = ?, Email = ? WHERE Email = ?")
+	stmtChangeName, err := db.database.Prepare("UPDATE User SET Name = ? WHERE Email = ?")
+	stmtChangeEmail, err := db.database.Prepare("UPDATE User SET Email = ? WHERE Email = ?")
 	if err != nil {
-		return err
+		return nil, err
+	}
+
+	var changeEmail bool
+	var changeName bool
+
+	if len(newEmail) > 0 {
+		changeEmail = true
+	}
+	if len(newName) > 0 {
+		changeName = true
+	}
+	if !changeEmail && !changeName {
+		return nil, fmt.Errorf("Can't update to nil values")
+	}
+	if changeName && changeEmail {
+		_, err = stmtChangeBoth.Exec(newName, newEmail, email)
+		if err != nil {
+			return nil, err
+		}
+		return db.GetUser(newEmail)
+	}
+	if changeName {
+		_, err = stmtChangeName.Exec(newName, email)
+		if err != nil {
+			return nil, err
+		}
+		return db.GetUser(email)
+	}
+	_, err = stmtChangeEmail.Exec(newEmail, email)
+	if err != nil {
+		return nil, err
+	}
+	return db.GetUser(newEmail)
+}
+
+func (db *Data) DeleteUser(email string) (*User, error) {
+	usr, err := db.GetUser(email)
+	if err != nil {
+		return nil, err
+	}
+	stmtRm, err := db.database.Prepare("DELETE FROM User WHERE Email = ?")
+	if err != nil {
+		return nil, err
+	}
+	_, err = stmtRm.Exec(email)
+	if err != nil {
+		return nil, err
 	}
 	defer stmtRm.Close()
-	return nil
+	return usr, nil
 }
 
 func (db *Data) GetUser(email string) (*User, error) {
