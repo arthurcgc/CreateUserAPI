@@ -130,7 +130,7 @@ func (app *RestApi) appendRouterFunctions() {
 }
 
 func Initialize(username string, password string) (*RestApi, error) {
-	db := data.Data{Username: username, Password: password}
+	db := &data.Data{Username: username, Password: password}
 	// app.Database.Username = username
 	// app.Database.Password = password
 
