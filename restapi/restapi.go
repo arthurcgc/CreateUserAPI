@@ -130,15 +130,17 @@ func (app *RestApi) appendRouterFunctions() {
 }
 
 func Initialize(username string, password string) (*RestApi, error) {
-	app := &RestApi{}
-	app := new(RestApi)
-	app.Database.Username = username
-	app.Database.Password = password
-	err := app.Database.OpenDb()
+	db := data.Data{Username: username, Password: password}
+	// app.Database.Username = username
+	// app.Database.Password = password
+
+	err := db.OpenDb()
 	if err != nil {
 		return nil, err
 	}
-	app.Router = mux.NewRouter()
+	r := mux.NewRouter()
+	app := &RestApi{Router: r, Database: db}
+
 	app.appendRouterFunctions()
 	return app, nil
 }
