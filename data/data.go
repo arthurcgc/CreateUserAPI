@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	//comment justifying it
-
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -17,12 +16,12 @@ type User struct {
 type Data struct {
 	Username string
 	Password string
-	database *sql.DB
+	Database *sql.DB
 }
 
 func (db *Data) OpenDb() error {
 	var err error
-	db.database, err = sql.Open("mysql", db.getDbConnectionString())
+	db.Database, err = sql.Open("mysql", db.getDbConnectionString())
 	if err != nil {
 		return err
 	}
@@ -35,11 +34,11 @@ func (db *Data) getDbConnectionString() string {
 }
 
 func (db *Data) CloseDb() {
-	db.database.Close()
+	db.Database.Close()
 }
 
 func (db *Data) InsertUser(name string, email string) error {
-	stmtIns, err := db.database.Prepare("INSERT INTO User VALUES (?, ?);")
+	stmtIns, err := db.Database.Prepare("INSERT INTO User VALUES (?, ?);")
 	if err != nil {
 		return err
 	}
@@ -56,9 +55,9 @@ func (db *Data) UpdateUser(email string, newEmail string, newName string) (*User
 	if err != nil {
 		return nil, err
 	}
-	stmtChangeBoth, err := db.database.Prepare("UPDATE User SET Name = ?, Email = ? WHERE Email = ?")
-	stmtChangeName, err := db.database.Prepare("UPDATE User SET Name = ? WHERE Email = ?")
-	stmtChangeEmail, err := db.database.Prepare("UPDATE User SET Email = ? WHERE Email = ?")
+	stmtChangeBoth, err := db.Database.Prepare("UPDATE User SET Name = ?, Email = ? WHERE Email = ?")
+	stmtChangeName, err := db.Database.Prepare("UPDATE User SET Name = ? WHERE Email = ?")
+	stmtChangeEmail, err := db.Database.Prepare("UPDATE User SET Email = ? WHERE Email = ?")
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +100,7 @@ func (db *Data) DeleteUser(email string) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	stmtRm, err := db.database.Prepare("DELETE FROM User WHERE Email = ?")
+	stmtRm, err := db.Database.Prepare("DELETE FROM User WHERE Email = ?")
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +113,7 @@ func (db *Data) DeleteUser(email string) (*User, error) {
 }
 
 func (db *Data) GetUser(email string) (*User, error) {
-	rows, err := db.database.Query("SELECT * from User WHERE email=?", email)
+	rows, err := db.Database.Query("SELECT * from User WHERE Email=?", email)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +131,7 @@ func (db *Data) GetUser(email string) (*User, error) {
 }
 
 func (db *Data) GetAll() ([]User, error) {
-	rows, err := db.database.Query("SELECT * from User")
+	rows, err := db.Database.Query("SELECT * from User")
 	if err != nil {
 		return nil, err
 	}

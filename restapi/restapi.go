@@ -11,7 +11,7 @@ import (
 
 type RestApi struct {
 	Router   *mux.Router
-	Database data.Data
+	Database data.DataInterface
 }
 
 func (app *RestApi) GetUser(w http.ResponseWriter, r *http.Request) {
@@ -130,6 +130,7 @@ func (app *RestApi) appendRouterFunctions() {
 }
 
 func Initialize(username string, password string) (*RestApi, error) {
+	app := &RestApi{}
 	app := new(RestApi)
 	app.Database.Username = username
 	app.Database.Password = password
