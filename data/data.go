@@ -33,8 +33,8 @@ func (db *Data) getDbConnectionString() string {
 	return dbString
 }
 
-func (db *Data) CloseDb() {
-	db.Database.Close()
+func (db *Data) CloseDb() error {
+	return db.Database.Close()
 }
 
 func (db *Data) InsertUser(name string, email string) error {
@@ -131,19 +131,18 @@ func (db *Data) GetUser(email string) (*User, error) {
 }
 
 func (db *Data) GetAll() ([]User, error) {
+	users := []User{}
 	rows, err := db.Database.Query("SELECT * from User")
 	if err != nil {
-		return nil, err
+		return users, err
 	}
 
 	defer rows.Close()
 
-	users := []User{}
-
 	for rows.Next() {
 		var u User
 		if err := rows.Scan(&u.Name, &u.Email); err != nil {
-			return nil, err
+			return users, err
 		}
 		users = append(users, u)
 	}

@@ -24,7 +24,7 @@ func checkResponseCode(t *testing.T, expected, actual int) {
 	}
 }
 
-func TestGetUser(t *testing.T) {
+func TestGetOne(t *testing.T) {
 	data, mock, err := createMockDb()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)

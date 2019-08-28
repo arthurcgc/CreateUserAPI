@@ -44,6 +44,9 @@ func (app *RestApi) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// json.NewEncoder(w).Encode(usr)
+	if len(usrs) == 0 {
+		respondWithJSON(w, http.StatusNotFound, usrs)
+	}
 	respondWithJSON(w, http.StatusOK, usrs)
 }
 

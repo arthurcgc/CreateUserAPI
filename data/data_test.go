@@ -76,7 +76,7 @@ func TestDeleteUser(t *testing.T) {
 		_, err := db.Database.Exec("INSERT INTO User VALUES ('Arthur','arthur@gmail.com')")
 		assert.NoError(t, err)
 
-		err = db.DeleteUser("Arthur", "arthur@gmail.com")
+		_, err = db.DeleteUser("arthur@gmail.com")
 		assert.NoError(t, err)
 		var rows *sql.Rows
 		rows, err = db.Database.Query("SELECT * from User WHERE name=? AND email=?", "Arthur", "arthur@gmail.com")
