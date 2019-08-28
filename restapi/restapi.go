@@ -73,7 +73,7 @@ func (app *RestApi) InsertUser(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Error inserting user to Database")
 		return
 	}
-	str := "User: " + helper.Name + ", with email: " + helper.Email + " inserted"
+	str := "Name: " + helper.Name + " Email: " + helper.Email
 	respondWithJSON(w, http.StatusCreated, str)
 }
 

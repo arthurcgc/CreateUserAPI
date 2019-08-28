@@ -1,6 +1,8 @@
 package restapi
 
 import (
+	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -20,7 +22,7 @@ func setEmptyMock() *mockData {
 	return mock
 }
 
-func executeGetRequest(t *testing.T, handler http.HandlerFunc, app *RestApi, path string) *http.Response {
+func executeGetRequest(t *testing.T, handler http.HandlerFunc, path string) *http.Response {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handler(w, r)
 	}))
@@ -45,7 +47,7 @@ func TestGetAll(t *testing.T) {
 
 		r := mux.NewRouter()
 		app := &RestApi{Router: r, Database: mock}
-		res := executeGetRequest(t, app.GetAllUsers, app, "/users")
+		res := executeGetRequest(t, app.GetAllUsers, "/users")
 		require.Equal(t, http.StatusOK, res.StatusCode)
 		info, err := ioutil.ReadAll(res.Body)
 		require.NoError(t, err)
@@ -61,7 +63,7 @@ func TestGetAll(t *testing.T) {
 
 		r := mux.NewRouter()
 		app := &RestApi{Router: r, Database: mock}
-		res := executeGetRequest(t, app.GetAllUsers, app, "/users")
+		res := executeGetRequest(t, app.GetAllUsers, "/users")
 		require.Equal(t, http.StatusNotFound, res.StatusCode)
 	})
 }
@@ -75,7 +77,7 @@ func TestGetUser(t *testing.T) {
 
 		r := mux.NewRouter()
 		app := &RestApi{Router: r, Database: mock}
-		res := executeGetRequest(t, app.GetUser, app, "/users/test@gmail.com")
+		res := executeGetRequest(t, app.GetUser, "/users/test@gmail.com")
 		require.Equal(t, http.StatusOK, res.StatusCode)
 		info, err := ioutil.ReadAll(res.Body)
 		require.NoError(t, err)
@@ -90,7 +92,41 @@ func TestGetUser(t *testing.T) {
 
 		r := mux.NewRouter()
 		app := &RestApi{Router: r, Database: mock}
-		res := executeGetRequest(t, app.GetUser, app, "/users/test@gmail.com")
+		res := executeGetRequest(t, app.GetUser, "/users/test@gmail.com")
 		require.Equal(t, http.StatusNotFound, res.StatusCode)
+	})
+}
+
+func executePostRequest(t *testing.T, app *RestApi, path string, payload []byte) *http.Response {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		app.InsertUser(w, r)
+	}))
+	defer ts.Close()
+	client := ts.Client()
+	res, err := client.Post(ts.URL+path, "application/json", bytes.NewBuffer(payload))
+	require.NoError(t, err)
+	return res
+}
+
+func TestInsertUser(t *testing.T) {
+	t.Run("", func(t *testing.T) {
+		// setup
+		mock := &mockData{}
+		r := mux.NewRouter()
+		app := &RestApi{Router: r, Database: mock}
+		payload, err := json.Marshal(data.User{Name: "test", Email: "test@gmail.com"})
+		require.NoError(t, err)
+		res := executePostRequest(t, app, "/users/", payload)
+		require.Equal(t, http.StatusCreated, res.StatusCode)
+		require.NoError(t, err)
+	})
+
+	t.Run("", func(t *testing.T) {
+		// setup
+		mock := &mockData{}
+		r := mux.NewRouter()
+		app := &RestApi{Router: r, Database: mock}
+		res := executePostRequest(t, app, "/users/", nil)
+		require.Equal(t, http.StatusBadRequest, res.StatusCode)
 	})
 }
