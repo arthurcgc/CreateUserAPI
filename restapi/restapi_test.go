@@ -1,12 +1,14 @@
 package restapi
 
 import (
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/arthurcgc/CreateUserAPI/data"
 	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,13 +20,13 @@ func setEmptyMock() *mockData {
 	return mock
 }
 
-func executeRequest(t *testing.T, handler http.HandlerFunc, app *RestApi) *http.Response {
+func executeGetRequest(t *testing.T, handler http.HandlerFunc, app *RestApi, path string) *http.Response {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		app.GetAllUsers(w, r)
+		handler(w, r)
 	}))
 	defer ts.Close()
 	client := ts.Client()
-	res, err := client.Get(ts.URL + "/users")
+	res, err := client.Get(ts.URL + path)
 	require.NoError(t, err)
 	return res
 }
@@ -33,8 +35,7 @@ func TestGetAll(t *testing.T) {
 
 	t.Run("", func(t *testing.T) {
 		// setup
-		mock := &mockData{openDbFunc: nil, closeDbfunc: nil, insertUserfunc: nil,
-			updateUserfunc: nil, deleteUserfunc: nil, getUserfunc: nil,
+		mock := &mockData{
 			getAllfunc: func() ([]data.User, error) {
 				var users []data.User
 				users = append(users, data.User{Name: "test1", Email: "test1@gmail.com"})
@@ -44,8 +45,14 @@ func TestGetAll(t *testing.T) {
 
 		r := mux.NewRouter()
 		app := &RestApi{Router: r, Database: mock}
-		res := executeRequest(t, app.GetAllUsers, app)
+		res := executeGetRequest(t, app.GetAllUsers, app, "/users")
 		require.Equal(t, http.StatusOK, res.StatusCode)
+		info, err := ioutil.ReadAll(res.Body)
+		require.NoError(t, err)
+		// [{"Name":"test1","Email":"test1@gmail.com"},{"Name":"test2","Email":"test2@gmail.com"}]
+		assert.Equal(t,
+			"[{\"Name\":\"test1\",\"Email\":\"test1@gmail.com\"},{\"Name\":\"test2\",\"Email\":\"test2@gmail.com\"}]",
+			string(info))
 	})
 
 	t.Run("", func(t *testing.T) {
@@ -54,7 +61,36 @@ func TestGetAll(t *testing.T) {
 
 		r := mux.NewRouter()
 		app := &RestApi{Router: r, Database: mock}
-		res := executeRequest(t, app.GetAllUsers, app)
+		res := executeGetRequest(t, app.GetAllUsers, app, "/users")
+		require.Equal(t, http.StatusNotFound, res.StatusCode)
+	})
+}
+
+func TestGetUser(t *testing.T) {
+	t.Run("", func(t *testing.T) {
+		// setup
+		mock := &mockData{getUserfunc: func(email string) (*data.User, error) {
+			return &data.User{Name: "test", Email: "test@gmail.com"}, nil
+		}}
+
+		r := mux.NewRouter()
+		app := &RestApi{Router: r, Database: mock}
+		res := executeGetRequest(t, app.GetUser, app, "/users/test@gmail.com")
+		require.Equal(t, http.StatusOK, res.StatusCode)
+		info, err := ioutil.ReadAll(res.Body)
+		require.NoError(t, err)
+		assert.Equal(t,
+			"{\"Name\":\"test\",\"Email\":\"test@gmail.com\"}",
+			string(info))
+	})
+
+	t.Run("", func(t *testing.T) {
+		// setup
+		mock := &mockData{}
+
+		r := mux.NewRouter()
+		app := &RestApi{Router: r, Database: mock}
+		res := executeGetRequest(t, app.GetUser, app, "/users/test@gmail.com")
 		require.Equal(t, http.StatusNotFound, res.StatusCode)
 	})
 }

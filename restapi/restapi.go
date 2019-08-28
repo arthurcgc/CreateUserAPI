@@ -27,8 +27,11 @@ func (app *RestApi) GetUser(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Error retrieving User")
 		return
 	}
-	// json.NewEncoder(w).Encode(usr)
-	respondWithJSON(w, http.StatusOK, usr)
+	if usr != nil {
+		respondWithJSON(w, http.StatusOK, usr)
+		return
+	}
+	respondWithJSON(w, http.StatusNotFound, usr)
 }
 
 func (app *RestApi) GetAllUsers(w http.ResponseWriter, r *http.Request) {
