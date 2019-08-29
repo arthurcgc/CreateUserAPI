@@ -7,7 +7,7 @@ import (
 type mockData struct {
 	openDbFunc     func() error
 	closeDbfunc    func() error
-	insertUserfunc func(name, email string) error
+	insertUserfunc func(name, email string) (*data.User, error)
 	updateUserfunc func(email, newEmail, newName string) (*data.User, error)
 	deleteUserfunc func(email string) (*data.User, error)
 	getUserfunc    func(email string) (*data.User, error)
@@ -28,9 +28,9 @@ func (m *mockData) CloseDb() error {
 	return m.closeDbfunc()
 }
 
-func (m *mockData) InsertUser(name, email string) error {
+func (m *mockData) InsertUser(name, email string) (*data.User, error) {
 	if m.insertUserfunc == nil {
-		return nil
+		return nil, nil
 	}
 	return m.insertUserfunc(name, email)
 }

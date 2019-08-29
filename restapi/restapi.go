@@ -43,13 +43,10 @@ func (app *RestApi) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 
 	usrs, err := app.Database.GetAll()
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Error retrieving Users")
+		respondWithError(w, http.StatusInternalServerError, "Error retrieving Users")
 		return
 	}
 	// json.NewEncoder(w).Encode(usr)
-	if len(usrs) == 0 {
-		respondWithJSON(w, http.StatusNotFound, usrs)
-	}
 	respondWithJSON(w, http.StatusOK, usrs)
 }
 
@@ -60,51 +57,60 @@ func (app *RestApi) InsertUser(w http.ResponseWriter, r *http.Request) {
 	}{}
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&helper); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		respondWithError(w, http.StatusBadRequest, "Invalid data requested")
 		return
 	}
 	defer r.Body.Close()
 	if len(helper.Name) == 0 || len(helper.Email) == 0 {
-		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		respondWithError(w, http.StatusNotAcceptable, "Can't insert blank data")
 		return
 	}
 	if err := app.Database.OpenDb(); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Error opening Database")
+		respondWithError(w, http.StatusInternalServerError, "Error opening Database")
 		return
 	}
 	defer app.Database.CloseDb()
-	if err := app.Database.InsertUser(helper.Name, helper.Email); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Error inserting user to Database")
+	usr, err := app.Database.InsertUser(helper.Name, helper.Email)
+	if err != nil {
+		respondWithError(w, http.StatusNotAcceptable, "Error inserting user to Database")
 		return
 	}
-	str := "Name: " + helper.Name + " Email: " + helper.Email
-	respondWithJSON(w, http.StatusCreated, str)
+	respondWithJSON(w, http.StatusCreated, usr)
+}
+
+type updateArgs struct {
+	Email    string `json:"email"`
+	NewName  string `json:"newName"`
+	NewEmail string `json:"newEmail"`
 }
 
 func (app *RestApi) UpdateUser(w http.ResponseWriter, r *http.Request) {
-	helper := struct {
-		Email    string `json:"email"`
-		NewName  string `json:"newName"`
-		NewEmail string `json:"newEmail"`
-	}{}
+	var helper updateArgs
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&helper); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 	defer r.Body.Close()
+	if len(helper.Email) == 0 {
+		respondWithError(w, http.StatusNotAcceptable, "No primary string passed")
+		return
+	}
+	if len(helper.NewName) == 0 && len(helper.NewEmail) == 0 {
+		respondWithError(w, http.StatusNotAcceptable, "No new values passed")
+		return
+	}
 	if err := app.Database.OpenDb(); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Error opening Database")
+		respondWithError(w, http.StatusInternalServerError, "Error opening Database")
 		return
 	}
 	defer app.Database.CloseDb()
 	usr, err := app.Database.UpdateUser(helper.Email, helper.NewEmail, helper.NewName)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Error updating user to Database")
+		respondWithError(w, http.StatusNotFound, "Error updating user to Database")
 		return
 	}
-	str := "User: " + usr.Name + ", with email: " + usr.Email + " updated"
-	respondWithJSON(w, http.StatusOK, str)
+	respondWithJSON(w, http.StatusOK, usr)
 }
 
 func (app *RestApi) DeleteUser(w http.ResponseWriter, r *http.Request) {
@@ -117,18 +123,20 @@ func (app *RestApi) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
+	if len(helper.Email) == 0 {
+		respondWithError(w, http.StatusNotAcceptable, "Can't accept blank user")
+	}
 	if err := app.Database.OpenDb(); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Error opening Database")
+		respondWithError(w, http.StatusInternalServerError, "Error connecting to Database")
 		return
 	}
 	defer app.Database.CloseDb()
 	usr, err := app.Database.DeleteUser(helper.Email)
 	if err != nil || usr == nil {
-		respondWithError(w, http.StatusBadRequest, "Error deleting user from Database")
+		respondWithError(w, http.StatusNotFound, "Invalid user passed")
 		return
 	}
-	str := "User: " + usr.Name + ", with email: " + usr.Email + " deleted"
-	respondWithJSON(w, http.StatusOK, str)
+	respondWithJSON(w, http.StatusAccepted, usr)
 }
 
 func (app *RestApi) appendRouterFunctions() {

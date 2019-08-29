@@ -37,17 +37,18 @@ func (db *Data) CloseDb() error {
 	return db.Database.Close()
 }
 
-func (db *Data) InsertUser(name string, email string) error {
+func (db *Data) InsertUser(name string, email string) (*User, error) {
+	usr := &User{Name: name, Email: email}
 	stmtIns, err := db.Database.Prepare("INSERT INTO User VALUES (?, ?);")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	_, err = stmtIns.Exec(name, email)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer stmtIns.Close()
-	return nil
+	return usr, nil
 }
 
 func (db *Data) UpdateUser(email string, newEmail string, newName string) (*User, error) {
