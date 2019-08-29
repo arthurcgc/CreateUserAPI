@@ -129,4 +129,65 @@ func TestInsertUser(t *testing.T) {
 		res := executePostRequest(t, app, "/users/", nil)
 		require.Equal(t, http.StatusBadRequest, res.StatusCode)
 	})
+
+	t.Run("", func(t *testing.T) {
+		// setup
+		mock := &mockData{}
+		r := mux.NewRouter()
+		app := &RestApi{Router: r, Database: mock}
+		payload, err := json.Marshal(data.User{Name: "", Email: ""})
+		require.NoError(t, err)
+		res := executePostRequest(t, app, "/users/", payload)
+		require.Equal(t, http.StatusBadRequest, res.StatusCode)
+
+		payload, err = json.Marshal(data.User{Name: "", Email: ""})
+		require.NoError(t, err)
+		res = executePostRequest(t, app, "/users/", payload)
+		require.Equal(t, http.StatusBadRequest, res.StatusCode)
+	})
+}
+
+func executeDeleteRequest(t *testing.T, app *RestApi, path string, payload []byte) *http.Response {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		app.DeleteUser(w, r)
+	}))
+	defer ts.Close()
+	client := ts.Client()
+	req, err := http.NewRequest("DELETE", ts.URL+path, bytes.NewBuffer(payload))
+	require.NoError(t, err)
+	res, err := client.Do(req)
+	assert.NoError(t, err)
+	return res
+}
+
+func TestDeleteUser(t *testing.T) {
+	t.Run("", func(t *testing.T) {
+		// setup
+		mock := &mockData{deleteUserfunc: func(email string) (*data.User, error) {
+			return &data.User{Name: "test", Email: "test@email.com"}, nil
+		}}
+		r := mux.NewRouter()
+		app := &RestApi{Router: r, Database: mock}
+		payload, err := json.Marshal(data.User{Name: "test", Email: "test@gmail.com"})
+		require.NoError(t, err)
+		res := executeDeleteRequest(t, app, "/users/", payload)
+		require.Equal(t, http.StatusOK, res.StatusCode)
+		require.NoError(t, err)
+	})
+
+	t.Run("", func(t *testing.T) {
+		// setup
+		mock := &mockData{}
+		r := mux.NewRouter()
+		app := &RestApi{Router: r, Database: mock}
+		// payload, err := json.Marshal(data.User{Name: "test", Email: "test@gmail.com"})
+		// require.NoError(t, err)
+		res := executeDeleteRequest(t, app, "/users/", nil)
+		require.Equal(t, http.StatusBadRequest, res.StatusCode)
+
+		payload, err := json.Marshal(data.User{Name: "test", Email: "test@gmail.com"})
+		require.NoError(t, err)
+		res = executeDeleteRequest(t, app, "/users/", payload)
+		require.Equal(t, http.StatusBadRequest, res.StatusCode)
+	})
 }

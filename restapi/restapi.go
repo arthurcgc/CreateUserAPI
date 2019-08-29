@@ -64,6 +64,10 @@ func (app *RestApi) InsertUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
+	if len(helper.Name) == 0 || len(helper.Email) == 0 {
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
 	if err := app.Database.OpenDb(); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Error opening Database")
 		return
@@ -119,7 +123,7 @@ func (app *RestApi) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer app.Database.CloseDb()
 	usr, err := app.Database.DeleteUser(helper.Email)
-	if err != nil {
+	if err != nil || usr == nil {
 		respondWithError(w, http.StatusBadRequest, "Error deleting user from Database")
 		return
 	}
