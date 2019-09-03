@@ -17,14 +17,14 @@ type RestApi struct {
 func (app *RestApi) GetUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	if err := app.Database.OpenDb(); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Error opening Database")
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	defer app.Database.CloseDb()
 
 	usr, err := app.Database.GetUser(params["email"])
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Error retrieving User")
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if usr != nil {
@@ -36,14 +36,14 @@ func (app *RestApi) GetUser(w http.ResponseWriter, r *http.Request) {
 
 func (app *RestApi) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	if err := app.Database.OpenDb(); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Error opening Database")
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	defer app.Database.CloseDb()
 
 	usrs, err := app.Database.GetAll()
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Error retrieving Users")
+		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	// json.NewEncoder(w).Encode(usr)
@@ -57,7 +57,7 @@ func (app *RestApi) InsertUser(w http.ResponseWriter, r *http.Request) {
 	}{}
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&helper); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid data requested")
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	defer r.Body.Close()
@@ -66,13 +66,13 @@ func (app *RestApi) InsertUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := app.Database.OpenDb(); err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Error opening Database")
+		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	defer app.Database.CloseDb()
 	usr, err := app.Database.InsertUser(helper.Name, helper.Email)
 	if err != nil {
-		respondWithError(w, http.StatusNotAcceptable, "Error inserting user to Database")
+		respondWithError(w, http.StatusNotAcceptable, err.Error())
 		return
 	}
 	respondWithJSON(w, http.StatusCreated, usr)
@@ -88,7 +88,7 @@ func (app *RestApi) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	var helper updateArgs
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&helper); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	defer r.Body.Close()
@@ -101,13 +101,13 @@ func (app *RestApi) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := app.Database.OpenDb(); err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Error opening Database")
+		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	defer app.Database.CloseDb()
 	usr, err := app.Database.UpdateUser(helper.Email, helper.NewEmail, helper.NewName)
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "Error updating user to Database")
+		respondWithError(w, http.StatusNotFound, err.Error())
 		return
 	}
 	respondWithJSON(w, http.StatusOK, usr)
@@ -127,7 +127,7 @@ func (app *RestApi) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusNotAcceptable, "Can't accept blank user")
 	}
 	if err := app.Database.OpenDb(); err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Error connecting to Database")
+		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	defer app.Database.CloseDb()
@@ -147,8 +147,8 @@ func (app *RestApi) appendRouterFunctions() {
 	app.Router.HandleFunc("/users/", app.DeleteUser).Methods("DELETE")
 }
 
-func Initialize(username string, password string) (*RestApi, error) {
-	db := &data.Data{Username: username, Password: password}
+func Initialize() (*RestApi, error) {
+	db := &data.Data{}
 	// app.Database.Username = username
 	// app.Database.Password = password
 

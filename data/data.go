@@ -3,6 +3,7 @@ package data
 import (
 	"database/sql"
 	"fmt"
+	"os"
 
 	//comment justifying it
 	_ "github.com/go-sql-driver/mysql"
@@ -14,8 +15,6 @@ type User struct {
 }
 
 type Data struct {
-	Username string
-	Password string
 	Database *sql.DB
 }
 
@@ -29,7 +28,9 @@ func (db *Data) OpenDb() error {
 }
 
 func (db *Data) getDbConnectionString() string {
-	dbString := db.Username + ":" + db.Password + "@/second_go_proj"
+	// mysql://user:pass@host:port/db
+	// dbString := db.Username + ":" + db.Password + "@/second_go_proj"
+	dbString := os.Getenv("SQL_ENV")
 	return dbString
 }
 
