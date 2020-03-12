@@ -1,6 +1,6 @@
 package data
 
-type DataInterface interface {
+type DataManager interface {
 	OpenDb() error
 	CloseDb() error
 	InsertUser(name string, email string) (*User, error)

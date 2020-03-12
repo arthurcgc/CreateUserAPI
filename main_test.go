@@ -3,8 +3,9 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
 
-	"github.com/arthurcgc/CreateUserAPI/restapi"
+	restapi "github.com/arthurcgc/CreateUserAPI/api"
 )
 
 var app *restapi.RestApi
@@ -16,14 +17,13 @@ func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 	return rr
 }
 
-// func TestMain(m *testing.M) {
-// 	var err error
-// 	app, err = restapi.Initialize()
-// 	require.NotNil(m, err)
+func main() {
+	app, err = api.Initialize()
+	if err != nil {
+		return fmt.Fatalf(err)
+	}
 
-// 	code := m.Run()
+	code := m.Run()
 
-// 	clearTable()
-
-// 	os.Exit(code)
-// }
+	os.Exit(code)
+}

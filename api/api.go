@@ -1,4 +1,4 @@
-package restapi
+package api
 
 import (
 	"encoding/json"
@@ -9,12 +9,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type RestApi struct {
+type API struct {
 	Router   *mux.Router
 	Database data.DataInterface
 }
 
-func (app *RestApi) GetUser(w http.ResponseWriter, r *http.Request) {
+func (app *API) GetUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	if err := app.Database.OpenDb(); err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
@@ -34,7 +34,7 @@ func (app *RestApi) GetUser(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusNotFound, usr)
 }
 
-func (app *RestApi) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+func (app *API) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	if err := app.Database.OpenDb(); err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
@@ -46,11 +46,11 @@ func (app *RestApi) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	// json.NewEncoder(w).Encode(usr)
+
 	respondWithJSON(w, http.StatusOK, usrs)
 }
 
-func (app *RestApi) InsertUser(w http.ResponseWriter, r *http.Request) {
+func (app *API) InsertUser(w http.ResponseWriter, r *http.Request) {
 	helper := struct {
 		Name  string `json:"name"`
 		Email string `json:"email"`
@@ -84,7 +84,7 @@ type updateArgs struct {
 	NewEmail string `json:"newEmail"`
 }
 
-func (app *RestApi) UpdateUser(w http.ResponseWriter, r *http.Request) {
+func (app *API) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	var helper updateArgs
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&helper); err != nil {
@@ -113,7 +113,7 @@ func (app *RestApi) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, usr)
 }
 
-func (app *RestApi) DeleteUser(w http.ResponseWriter, r *http.Request) {
+func (app *API) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	helper := struct {
 		Email string `json:"email"`
 	}{}
@@ -139,7 +139,7 @@ func (app *RestApi) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusAccepted, usr)
 }
 
-func (app *RestApi) appendRouterFunctions() {
+func (app *API) appendRouterFunctions() {
 	app.Router.HandleFunc("/users/{email}", app.GetUser).Methods("GET")
 	app.Router.HandleFunc("/users", app.GetAllUsers).Methods("GET")
 	app.Router.HandleFunc("/users/", app.InsertUser).Methods("POST")
@@ -147,23 +147,20 @@ func (app *RestApi) appendRouterFunctions() {
 	app.Router.HandleFunc("/users/", app.DeleteUser).Methods("DELETE")
 }
 
-func Initialize() (*RestApi, error) {
+func Initialize() (*API, error) {
 	db := &data.Data{}
-	// app.Database.Username = username
-	// app.Database.Password = password
-
 	err := db.OpenDb()
 	if err != nil {
 		return nil, err
 	}
 	r := mux.NewRouter()
-	app := &RestApi{Router: r, Database: db}
+	app := &API{Router: r, Database: db}
 
 	app.appendRouterFunctions()
 	return app, nil
 }
 
-func (app *RestApi) Run() {
+func (app *API) Run() {
 	log.Fatal(http.ListenAndServe(":8000", app.Router))
 }
 
