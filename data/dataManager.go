@@ -1,5 +1,10 @@
 package data
 
+type User struct {
+	Name  string `bson:"name"`
+	Email string `bson:"email"`
+}
+
 type DataManager interface {
 	OpenDb() error
 	CloseDb() error

@@ -11,7 +11,7 @@ import (
 
 type API struct {
 	Router   *mux.Router
-	Database data.DataInterface
+	Database data.DataManager
 }
 
 func (app *API) GetUser(w http.ResponseWriter, r *http.Request) {
@@ -148,7 +148,7 @@ func (app *API) appendRouterFunctions() {
 }
 
 func Initialize() (*API, error) {
-	db := &data.Data{}
+	db := &data.Mdata{}
 	err := db.OpenDb()
 	if err != nil {
 		return nil, err

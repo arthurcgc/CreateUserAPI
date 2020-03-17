@@ -9,11 +9,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type User struct {
-	Name  string
-	Email string
-}
-
 type Data struct {
 	Database *sql.DB
 }
